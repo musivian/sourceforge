@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Function to check if jq and sshpass are installed
+# Function to check if jq, sshpass, and pv are installed
 check_dependencies() {
   if ! command -v jq &> /dev/null; then
     echo "jq is not installed. Installing jq..."
@@ -16,9 +16,16 @@ check_dependencies() {
   else
     echo "sshpass is already installed."
   fi
+
+  if ! command -v pv &> /dev/null; then
+    echo "pv is not installed. Installing pv..."
+    sudo apt-get install -y pv
+  else
+    echo "pv is already installed."
+  fi
 }
 
-# Check for dependencies (jq and sshpass)
+# Check for dependencies (jq, sshpass, and pv)
 check_dependencies
 
 # Load credentials and project name from private.json
@@ -42,7 +49,7 @@ if [ ${#FILES[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Upload each file in the current directory via SCP using sshpass
+# Upload each file in the current directory via SCP using sshpass and show progress
 for FILE in "${FILES[@]}"; do
   # Skip the script itself and private.json
   if [[ "$FILE" == "upload_to_sourceforge.sh" || "$FILE" == "private.json" ]]; then
@@ -51,8 +58,11 @@ for FILE in "${FILES[@]}"; do
 
   echo "Uploading $FILE to $UPLOAD_PATH..."
 
-  # Use sshpass with scp to upload the file and automatically accept SSH key fingerprints
-  sshpass -p "$SOURCEFORGE_PASSWORD" scp -o StrictHostKeyChecking=no "$FILE" "$UPLOAD_PATH"
+  # Get the file size
+  FILE_SIZE=$(stat --printf="%s" "$FILE")
+
+  # Use sshpass with scp and pv to upload the file with a progress bar
+  sshpass -p "$SOURCEFORGE_PASSWORD" pv -p -t -e -r -s "$FILE_SIZE" "$FILE" | sshpass -p "$SOURCEFORGE_PASSWORD" scp -o StrictHostKeyChecking=no /dev/stdin "$UPLOAD_PATH/$FILE"
 
   # Check if the upload was successful
   if [ $? -eq 0 ]; then
