@@ -71,9 +71,4 @@ for FILE in "${FILES[@]}"; do
   fi
 done
 
-# Verify uploaded files on SourceForge using sshpass with ssh
-echo -e "${BLUE}Verifying uploaded files in the project ${YELLOW}$PROJECT_NAME${BLUE}...${NC}"
-
-sshpass -p "$SOURCEFORGE_PASSWORD" ssh -o StrictHostKeyChecking=no "$SOURCEFORGE_USERNAME@frs.sourceforge.net" "ls /home/frs/project/$PROJECT_NAME"
-
-echo -e "${GREEN}Upload and verification process complete.${NC}"
+echo -e "${GREEN}All files have been uploaded successfully.${NC}"
