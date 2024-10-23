@@ -47,11 +47,14 @@ for FILE in "${FILES[@]}"; do
   # Use curl to upload the file
   response=$(curl -s -u "$SOURCEFORGE_USERNAME:$SOURCEFORGE_PASSWORD" -T "$FILE" "$API_URL$FILE")
 
+  # Output the raw response for debugging
+  echo "Response from SourceForge for $FILE: $response"
+
   # Check for success or failure
   if [[ "$response" == *"success"* ]]; then
     echo "Successfully uploaded $FILE."
   else
-    echo "Failed to upload $FILE. Response: $response"
+    echo "Failed to upload $FILE. Check the response above for more details."
   fi
 done
 
