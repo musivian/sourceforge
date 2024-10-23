@@ -51,7 +51,7 @@ if [ ${#FILES[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Upload each file in the current directory via SCP using sshpass
+# Upload each file in the current directory via SCP using sshpass and show progress
 for FILE in "${FILES[@]}"; do
   # Skip the script itself and private.json
   if [[ "$FILE" == "upload_to_sourceforge.sh" || "$FILE" == "private.json" ]]; then
@@ -60,8 +60,8 @@ for FILE in "${FILES[@]}"; do
 
   echo -e "${BLUE}Uploading ${YELLOW}$FILE${BLUE} to ${YELLOW}$UPLOAD_PATH${BLUE}...${NC}"
 
-  # Use sshpass with scp to upload the file and automatically accept SSH key fingerprints
-  sshpass -p "$SOURCEFORGE_PASSWORD" scp -o StrictHostKeyChecking=no "$FILE" "$UPLOAD_PATH"
+  # Use sshpass with scp to upload the file, show progress, and automatically accept SSH key fingerprints
+  sshpass -p "$SOURCEFORGE_PASSWORD" scp -v -o StrictHostKeyChecking=no "$FILE" "$UPLOAD_PATH"
 
   # Check if the upload was successful
   if [ $? -eq 0 ]; then
