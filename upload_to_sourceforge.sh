@@ -55,4 +55,19 @@ for FILE in "${FILES[@]}"; do
   fi
 done
 
-echo "All uploads are complete."
+# Verify uploaded files
+echo "Verifying uploaded files in the project $PROJECT_NAME..."
+
+# Set the API endpoint to list files in the project
+LIST_API_URL="https://sourceforge.net/projects/$PROJECT_NAME/files/"
+# Use curl to get the list of files
+file_list=$(curl -s "$LIST_API_URL" | grep -oP '(?<=href=")[^"]*' | grep "$PROJECT_NAME")
+
+if [ -z "$file_list" ]; then
+  echo "No files found in the project $PROJECT_NAME."
+else
+  echo "Files in the project $PROJECT_NAME:"
+  echo "$file_list"
+fi
+
+echo "All uploads and verifications are complete."
