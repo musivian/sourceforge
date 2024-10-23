@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Define color codes
+# Define color variables
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m' # No color
 
-# Function to check if jq, sshpass, and pv are installed
+# Function to check if jq and sshpass are installed
 check_dependencies() {
-  echo -e "${CYAN}Checking dependencies...${NC}"
+  echo -e "${BLUE}Checking dependencies...${NC}"
+
   if ! command -v jq &> /dev/null; then
     echo -e "${YELLOW}jq is not installed. Installing jq...${NC}"
     sudo apt-get update
@@ -25,16 +25,9 @@ check_dependencies() {
   else
     echo -e "${GREEN}sshpass is already installed.${NC}"
   fi
-
-  if ! command -v pv &> /dev/null; then
-    echo -e "${YELLOW}pv is not installed. Installing pv...${NC}"
-    sudo apt-get install -y pv
-  else
-    echo -e "${GREEN}pv is already installed.${NC}"
-  fi
 }
 
-# Check for dependencies (jq, sshpass, and pv)
+# Check for dependencies (jq and sshpass)
 check_dependencies
 
 # Load credentials and project name from private.json
@@ -43,7 +36,6 @@ if [ ! -f private.json ]; then
   exit 1
 fi
 
-echo -e "${CYAN}Loading credentials from private.json...${NC}"
 # Read credentials and project name from private.json
 SOURCEFORGE_USERNAME=$(jq -r '.username' private.json)
 SOURCEFORGE_PASSWORD=$(jq -r '.password' private.json)
@@ -59,20 +51,17 @@ if [ ${#FILES[@]} -eq 0 ]; then
   exit 1
 fi
 
-# Upload each file in the current directory via SCP using sshpass and show progress
+# Upload each file in the current directory via SCP using sshpass
 for FILE in "${FILES[@]}"; do
   # Skip the script itself and private.json
   if [[ "$FILE" == "upload_to_sourceforge.sh" || "$FILE" == "private.json" ]]; then
     continue
   fi
 
-  echo -e "${BLUE}Uploading $FILE to $UPLOAD_PATH...${NC}"
+  echo -e "${BLUE}Uploading ${YELLOW}$FILE${BLUE} to ${YELLOW}$UPLOAD_PATH${BLUE}...${NC}"
 
-  # Get the file size
-  FILE_SIZE=$(stat --printf="%s" "$FILE")
-
-  # Use sshpass with scp and pv to upload the file with a progress bar
-  sshpass -p "$SOURCEFORGE_PASSWORD" pv -p -t -e -r -s "$FILE_SIZE" "$FILE" | sshpass -p "$SOURCEFORGE_PASSWORD" scp -o StrictHostKeyChecking=no /dev/stdin "$UPLOAD_PATH/$FILE"
+  # Use sshpass with scp to upload the file and automatically accept SSH key fingerprints
+  sshpass -p "$SOURCEFORGE_PASSWORD" scp -o StrictHostKeyChecking=no "$FILE" "$UPLOAD_PATH"
 
   # Check if the upload was successful
   if [ $? -eq 0 ]; then
@@ -83,7 +72,7 @@ for FILE in "${FILES[@]}"; do
 done
 
 # Verify uploaded files on SourceForge using sshpass with ssh
-echo -e "${CYAN}Verifying uploaded files in the project $PROJECT_NAME...${NC}"
+echo -e "${BLUE}Verifying uploaded files in the project ${YELLOW}$PROJECT_NAME${BLUE}...${NC}"
 
 sshpass -p "$SOURCEFORGE_PASSWORD" ssh -o StrictHostKeyChecking=no "$SOURCEFORGE_USERNAME@frs.sourceforge.net" "ls /home/frs/project/$PROJECT_NAME"
 
