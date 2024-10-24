@@ -88,16 +88,6 @@ for number in "${selected_numbers[@]}"; do
   fi
 done
 
-# Verify uploaded files on SourceForge using SSH
-echo -e "\e[34mVerifying uploaded files in the project $PROJECT_NAME...\e[0m"
-
-ssh "$SOURCEFORGE_USERNAME@frs.sourceforge.net" "ls /home/frs/project/$PROJECT_NAME" || {
-  echo -e "\e[31mFailed to verify uploaded files.\e[0m"
-  exit 1
-}
-
-echo -e "\e[32mUpload and verification process complete.\e[0m"
-
 # Display end message
 echo -e "\e[1;35m###############################################\e[0m"
 echo -e "\e[1;36mScript by Mahesh Technicals - Completed\e[0m"
