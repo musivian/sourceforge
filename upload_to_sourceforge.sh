@@ -43,18 +43,18 @@ FILES=($(find . -maxdepth 1 -type f \( -name "*.img" -o -name "*.zip" \)))
 
 if [ ${#FILES[@]} -eq 0 ]; then
   echo -e "\e[31mNo .img or .zip files found to upload.\e[0m"
-  exit 1
 fi
 
 # Display list of files with numbering and colors
 echo -e "\e[1;33mAvailable .img and .zip files for upload:\e[0m"
 echo -e "\e[1;32m1)\e[0m \e[34mAll .img and .zip files\e[0m"
+echo -e "\e[1;32m2)\e[0m \e[34mUpload a file via custom path\e[0m"
 
 for i in "${!FILES[@]}"; do
-  echo -e "\e[1;32m$((i+2)))\e[0m \e[36m${FILES[$i]#./}\e[0m"
+  echo -e "\e[1;32m$((i+3)))\e[0m \e[36m${FILES[$i]#./}\e[0m"
 done
 
-# Prompt user to select files by number (1 for all files)
+# Prompt user to select files by number (1 for all files, 2 for custom path)
 read -p "Enter the numbers of the files you want to upload (e.g., 2 4 5): " -a selected_numbers
 
 # Function to upload a file
@@ -80,9 +80,18 @@ for number in "${selected_numbers[@]}"; do
     for file in "${FILES[@]}"; do
       upload_file "$file"
     done
-  elif [ "$number" -gt 1 ] && [ "$number" -le $(( ${#FILES[@]} + 1 )) ]; then
+  elif [ "$number" -eq 2 ]; then
+    # If user selected 2, prompt for custom file path (user will get auto-completion)
+    echo -e "\e[34mPlease enter the full path of the file to upload (auto-completion enabled):\e[0m"
+    read -e -p "File path: " custom_file
+    if [ -f "$custom_file" ]; then
+      upload_file "$custom_file"
+    else
+      echo -e "\e[31mInvalid file path: $custom_file\e[0m"
+    fi
+  elif [ "$number" -gt 2 ] && [ "$number" -le $(( ${#FILES[@]} + 2 )) ]; then
     # Upload the specific file
-    upload_file "${FILES[$((number-2))]}"
+    upload_file "${FILES[$((number-3))]}"
   else
     echo -e "\e[31mInvalid selection: $number\e[0m"
   fi
