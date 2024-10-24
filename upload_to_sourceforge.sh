@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Display the script author
+echo -e "\e[1;35m###############################################\e[0m"
+echo -e "\e[1;36mScript by Mahesh Technicals\e[0m"
+echo -e "\e[1;35m###############################################\e[0m"
+
 # Function to check if jq is installed
 check_dependencies() {
   if ! command -v jq &> /dev/null; then
@@ -89,3 +94,8 @@ echo -e "\e[34mVerifying uploaded files in the project $PROJECT_NAME...\e[0m"
 ssh "$SOURCEFORGE_USERNAME@frs.sourceforge.net" "ls /home/frs/project/$PROJECT_NAME"
 
 echo -e "\e[32mUpload and verification process complete.\e[0m"
+
+# Display end message
+echo -e "\e[1;35m###############################################\e[0m"
+echo -e "\e[1;36mScript by Mahesh Technicals - Completed\e[0m"
+echo -e "\e[1;35m###############################################\e[0m"
