@@ -16,7 +16,7 @@ check_dependencies
 
 # Load credentials and project name from private.json
 if [ ! -f private.json ]; then
-  echo "Error: private.json not found!"
+  echo -e "\e[31mError: private.json not found!\e[0m"
   exit 1
 fi
 
@@ -26,7 +26,7 @@ PROJECT_NAME=$(jq -r '.project' private.json)
 
 # Ensure that all required fields are present
 if [ -z "$SOURCEFORGE_USERNAME" ] || [ -z "$PROJECT_NAME" ]; then
-  echo "Error: Missing required fields in private.json!"
+  echo -e "\e[31mError: Missing required fields in private.json!\e[0m"
   exit 1
 fi
 
@@ -37,16 +37,16 @@ UPLOAD_PATH="$SOURCEFORGE_USERNAME@frs.sourceforge.net:/home/frs/project/$PROJEC
 FILES=($(find . -maxdepth 1 -type f \( -name "*.img" -o -name "*.zip" \)))
 
 if [ ${#FILES[@]} -eq 0 ]; then
-  echo "No .img or .zip files found to upload."
+  echo -e "\e[31mNo .img or .zip files found to upload.\e[0m"
   exit 1
 fi
 
-# Display list of files with numbering
-echo "Available .img and .zip files for upload:"
-echo "1) All .img and .zip files"
+# Display list of files with numbering and colors
+echo -e "\e[1;33mAvailable .img and .zip files for upload:\e[0m"
+echo -e "\e[1;32m1)\e[0m \e[34mAll .img and .zip files\e[0m"
 
 for i in "${!FILES[@]}"; do
-  echo "$((i+2))) ${FILES[$i]#./}"  # Listing files starting from 2
+  echo -e "\e[1;32m$((i+2)))\e[0m \e[36m${FILES[$i]#./}\e[0m"
 done
 
 # Prompt user to select files by number (1 for all files)
@@ -55,16 +55,16 @@ read -p "Enter the numbers of the files you want to upload (e.g., 2 4 5): " -a s
 # Function to upload a file
 upload_file() {
   local file=$1
-  echo "Uploading $file to $UPLOAD_PATH..."
+  echo -e "\e[34mUploading $file to $UPLOAD_PATH...\e[0m"
 
   # Use scp to upload the file
   scp "$file" "$UPLOAD_PATH"
 
   # Check if the upload was successful
   if [ $? -eq 0 ]; then
-    echo "Successfully uploaded $file."
+    echo -e "\e[32mSuccessfully uploaded $file.\e[0m"
   else
-    echo "Failed to upload $file."
+    echo -e "\e[31mFailed to upload $file.\e[0m"
   fi
 }
 
@@ -79,13 +79,13 @@ for number in "${selected_numbers[@]}"; do
     # Upload the specific file
     upload_file "${FILES[$((number-2))]}"
   else
-    echo "Invalid selection: $number"
+    echo -e "\e[31mInvalid selection: $number\e[0m"
   fi
 done
 
 # Verify uploaded files on SourceForge using SSH
-echo "Verifying uploaded files in the project $PROJECT_NAME..."
+echo -e "\e[34mVerifying uploaded files in the project $PROJECT_NAME...\e[0m"
 
 ssh "$SOURCEFORGE_USERNAME@frs.sourceforge.net" "ls /home/frs/project/$PROJECT_NAME"
 
-echo "Upload and verification process complete."
+echo -e "\e[32mUpload and verification process complete.\e[0m"
