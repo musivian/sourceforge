@@ -16,6 +16,15 @@ check_dependencies() {
   fi
 }
 
+# Function to handle script interruption (CTRL+C)
+handle_interrupt() {
+  echo -e "\n\e[31mScript interrupted! Exiting...\e[0m"
+  exit 1
+}
+
+# Trap the SIGINT (CTRL+C) signal and call handle_interrupt function
+trap handle_interrupt SIGINT
+
 # Check for dependencies
 check_dependencies
 
