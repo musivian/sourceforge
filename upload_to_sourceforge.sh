@@ -2,7 +2,7 @@
 
 # Display the script author and version
 echo -e "\e[1;35m###############################################\e[0m"
-echo -e "\e[1;36mScript by Mahesh Technicals - Version 1.0\e[0m"
+echo -e "\e[1;36mScript by Mahesh Technicals - Version 1.2\e[0m"
 echo -e "\e[1;35m###############################################\e[0m"
 
 # Function to check if jq is installed
@@ -16,7 +16,7 @@ check_dependencies() {
   fi
 }
 
-# Check for dependencies (jq)
+# Check for dependencies
 check_dependencies
 
 # Load credentials and project name from private.json
@@ -29,7 +29,7 @@ fi
 SOURCEFORGE_USERNAME=$(jq -r '.username' private.json)
 PROJECT_NAME=$(jq -r '.project' private.json)
 
-# Ensure that all required fields are present
+# Ensure all required fields are present
 if [ -z "$SOURCEFORGE_USERNAME" ] || [ -z "$PROJECT_NAME" ]; then
   echo -e "\e[31mError: Missing required fields in private.json!\e[0m"
   exit 1
@@ -43,6 +43,7 @@ FILES=($(find . -maxdepth 1 -type f \( -name "*.img" -o -name "*.zip" \)))
 
 if [ ${#FILES[@]} -eq 0 ]; then
   echo -e "\e[31mNo .img or .zip files found to upload.\e[0m"
+  exit 1
 fi
 
 # Display list of files with numbering and colors
@@ -54,16 +55,20 @@ for i in "${!FILES[@]}"; do
   echo -e "\e[1;32m$((i+3)))\e[0m \e[36m${FILES[$i]#./}\e[0m"
 done
 
-# Prompt user to select files by number (1 for all files, 2 for custom path)
+# Prompt user to select files by number
 read -p "Enter the numbers of the files you want to upload (e.g., 2 4 5): " -a selected_numbers
+
+# Start an SSH ControlMaster session
+SOCKET=$(mktemp -u)
+ssh -o ControlMaster=yes -o ControlPath="$SOCKET" -o ControlPersist=30m "$SOURCEFORGE_USERNAME@frs.sourceforge.net" true
 
 # Function to upload a file
 upload_file() {
   local file=$1
   echo -e "\e[34mUploading $file to $UPLOAD_PATH...\e[0m"
 
-  # Use scp to upload the file
-  scp "$file" "$UPLOAD_PATH"
+  # Use scp with the SSH control socket
+  scp -o ControlPath="$SOCKET" "$file" "$UPLOAD_PATH"
 
   # Check if the upload was successful
   if [ $? -eq 0 ]; then
@@ -81,7 +86,7 @@ for number in "${selected_numbers[@]}"; do
       upload_file "$file"
     done
   elif [ "$number" -eq 2 ]; then
-    # If user selected 2, prompt for custom file path (user will get auto-completion)
+    # If user selected 2, prompt for custom file path
     echo -e "\e[34mPlease enter the full path of the file to upload (auto-completion enabled):\e[0m"
     read -e -p "File path: " custom_file
     if [ -f "$custom_file" ]; then
@@ -96,6 +101,9 @@ for number in "${selected_numbers[@]}"; do
     echo -e "\e[31mInvalid selection: $number\e[0m"
   fi
 done
+
+# End the SSH ControlMaster session
+ssh -o ControlPath="$SOCKET" -O exit "$SOURCEFORGE_USERNAME@frs.sourceforge.net"
 
 # Display end message
 echo -e "\e[1;35m###############################################\e[0m"
