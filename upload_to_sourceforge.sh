@@ -2,7 +2,7 @@
 
 # Display the script author and version
 echo -e "\e[1;35m###############################################\e[0m"
-echo -e "\e[1;36mScript by Mahesh Technicals - Version 1.2\e[0m"
+echo -e "\e[1;36mScript by Mahesh Technicals - Version 1.3\e[0m"
 echo -e "\e[1;35m###############################################\e[0m"
 
 # Function to check if jq is installed
@@ -18,8 +18,20 @@ check_dependencies() {
 
 # Function to handle script interruption (CTRL+C)
 handle_interrupt() {
-  echo -e "\n\e[31mScript interrupted! Exiting...\e[0m"
+  echo -e "\n\e[31mScript interrupted! Closing SSH session...\e[0m"
+  end_ssh_session
   exit 1
+}
+
+# Start SSH ControlMaster session
+start_ssh_session() {
+  SOCKET=$(mktemp -u)
+  ssh -o ControlMaster=yes -o ControlPath="$SOCKET" -fN "$SOURCEFORGE_USERNAME@frs.sourceforge.net"
+}
+
+# End SSH ControlMaster session
+end_ssh_session() {
+  ssh -o ControlPath="$SOCKET" -O exit "$SOURCEFORGE_USERNAME@frs.sourceforge.net"
 }
 
 # Trap the SIGINT (CTRL+C) signal and call handle_interrupt function
@@ -47,11 +59,15 @@ fi
 # Define the upload path on SourceForge
 UPLOAD_PATH="$SOURCEFORGE_USERNAME@frs.sourceforge.net:/home/frs/project/$PROJECT_NAME"
 
+# Start SSH session
+start_ssh_session
+
 # Find .img and .zip files in the current directory
 FILES=($(find . -maxdepth 1 -type f \( -name "*.img" -o -name "*.zip" \)))
 
 if [ ${#FILES[@]} -eq 0 ]; then
   echo -e "\e[31mNo .img or .zip files found to upload.\e[0m"
+  end_ssh_session
   exit 1
 fi
 
@@ -66,10 +82,6 @@ done
 
 # Prompt user to select files by number
 read -p "Enter the numbers of the files you want to upload (e.g., 2 4 5): " -a selected_numbers
-
-# Start an SSH ControlMaster session
-SOCKET=$(mktemp -u)
-ssh -o ControlMaster=yes -o ControlPath="$SOCKET" -o ControlPersist=30m "$SOURCEFORGE_USERNAME@frs.sourceforge.net" true
 
 # Function to upload a file
 upload_file() {
@@ -111,8 +123,8 @@ for number in "${selected_numbers[@]}"; do
   fi
 done
 
-# End the SSH ControlMaster session
-ssh -o ControlPath="$SOCKET" -O exit "$SOURCEFORGE_USERNAME@frs.sourceforge.net"
+# End the SSH session
+end_ssh_session
 
 # Display end message
 echo -e "\e[1;35m###############################################\e[0m"
